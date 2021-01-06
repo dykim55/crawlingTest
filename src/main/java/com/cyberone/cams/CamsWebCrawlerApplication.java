@@ -1,27 +1,22 @@
 package com.cyberone.cams;
 
-import java.awt.BorderLayout;
-import java.awt.Container;
 import java.awt.EventQueue;
 
 import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.scheduling.annotation.EnableScheduling;
 
+import chrriis.dj.nativeswing.common.UIUtils;
 import chrriis.dj.nativeswing.swtimpl.NativeInterface;
 
 @SpringBootApplication
-@EnableScheduling
-@EnableAsync
 public class CamsWebCrawlerApplication extends JFrame {
 
 	private static final long serialVersionUID = 2831544235615090763L;
@@ -35,9 +30,10 @@ public class CamsWebCrawlerApplication extends JFrame {
 	private ObjectRepository objectRepository;
 
 	public static void main(String[] args) {
-		SpringApplication.run(CamsWebCrawlerApplication.class, args);
+		//SpringApplication.run(CamsWebCrawlerApplication.class, args);
 		
     	NativeInterface.open();
+    	UIUtils.setPreferredLookAndFeel();
     	
     	ConfigurableApplicationContext ctx = new SpringApplicationBuilder(CamsWebCrawlerApplication.class)
                 .headless(false).run(args);
@@ -56,31 +52,58 @@ public class CamsWebCrawlerApplication extends JFrame {
 	}
 
     public void initUI() {
-    	webBrowserPanel = new WebBrowserPanel(objectRepository);
+    	webBrowserPanel = new WebBrowserPanel(objectRepository, getContentPane());
+
+        try {
+        	SwingUtilities.invokeLater(new WorkerThread(webBrowserPanel));
+        } catch (Exception e) {
+		} finally {
+		}
         
-    	Container pane = getContentPane();
-        pane.add(webBrowserPanel, BorderLayout.CENTER);
-        
+        /*
         int delay = 10000;
         Timer timer = new Timer( delay, e -> {
         	//logger.debug(webBrowserPanel.getResourceLocation());
-        	
         	webBrowserPanel.startWebCrawling();
-
-        	
         });
         timer.start();
+        */
     }
 	
 	public class WorkerThread implements Runnable {
 		
-	    public WorkerThread() {
+		WebBrowserPanel webBrowserPanel;
+		
+	    public WorkerThread(WebBrowserPanel webBrowserPanel) {
+	    	this.webBrowserPanel = webBrowserPanel;
 	    }
 
 	    @Override
 	    public void run() {
 	    	
 			try {
+
+				logger.debug("WorkerThread.run() start!!!");
+				
+				SwingUtilities.invokeLater(new Runnable() {
+		            public void run() {
+		            	webBrowserPanel.navigate("https://naver.com");
+		            }
+		        });
+
+				int delay = 5000;
+		        Timer timer = new Timer( delay, e -> {
+		        	SwingUtilities.invokeLater(new Runnable() {
+			            public void run() {
+			            	webBrowserPanel.navigate("https://naver.com");
+			            }
+			        });		        
+		        });
+		        timer.setRepeats(false);
+		        timer.start();
+				
+				logger.debug("WorkerThread.run() end!!!");
+				
 			} catch (Exception e) {
 			} finally {
 			}
@@ -89,4 +112,27 @@ public class CamsWebCrawlerApplication extends JFrame {
 
 	} //end WorkerThread
 
+	public class EmptyThread implements Runnable {
+		
+	    public EmptyThread() {
+	    }
+
+	    @Override
+	    public void run() {
+	    	
+			try {
+				logger.debug("EmptyThread.run() start!!!");
+
+				Thread.sleep(5000);
+
+				logger.debug("EmptyThread.run() end!!!");
+				
+			} catch (Exception e) {
+			} finally {
+			}
+			
+	    }
+
+	} //end WorkerThread
+	
 }
