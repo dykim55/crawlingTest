@@ -1,10 +1,11 @@
 package com.cyberone.cams;
 
 import java.awt.EventQueue;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Queue;
 
 import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
-import javax.swing.Timer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +24,6 @@ public class CamsWebCrawlerApplication extends JFrame {
 
 	private final Logger logger = LoggerFactory.getLogger(CamsWebCrawlerApplication.class);
 	
-	@Autowired
     WebBrowserPanel webBrowserPanel;
 	
 	@Autowired
@@ -66,6 +66,13 @@ public class CamsWebCrawlerApplication extends JFrame {
     	System.out.println("start initUI()");
     	webBrowserPanel = new WebBrowserPanel(getContentPane());
 
+    	WorkerThread worker = new WorkerThread(webBrowserPanel);
+    	Thread t = new Thread(worker);
+    	t.start();
+
+        Scheduler scheduler = new Scheduler(worker); 
+        scheduler.start();
+    	
     	/*
         try {
         	SwingUtilities.invokeLater(new WorkerThread(webBrowserPanel));
@@ -74,8 +81,8 @@ public class CamsWebCrawlerApplication extends JFrame {
 		}
         */
     	
-        Scheduler scheduler = new Scheduler(objectRepository, webBrowserPanel); 
-        scheduler.start();
+        //Scheduler scheduler = new Scheduler(objectRepository, webBrowserPanel); 
+        //scheduler.start();
         
         /*
         int delay = 10000;
@@ -91,6 +98,8 @@ public class CamsWebCrawlerApplication extends JFrame {
 		
 		WebBrowserPanel webBrowserPanel;
 		
+		Queue<Map<String, String>> queue = new LinkedList<>();
+		
 	    public WorkerThread(WebBrowserPanel webBrowserPanel) {
 	    	this.webBrowserPanel = webBrowserPanel;
 	    }
@@ -102,31 +111,56 @@ public class CamsWebCrawlerApplication extends JFrame {
 
 				logger.debug("WorkerThread.run() start!!!");
 				
-				SwingUtilities.invokeLater(new Runnable() {
-		            public void run() {
-		            	webBrowserPanel.navigate("https://naver.com");
-		            }
-		        });
+				while(true) {
+					
+					if (!webBrowserPanel.isComplete()) {
+						Thread.sleep(1000);
+						continue;
+					}
+					
+					Map<String, String> object = this.queue.poll();
 
-				int delay = 5000;
-		        Timer timer = new Timer( delay, e -> {
-		        	SwingUtilities.invokeLater(new Runnable() {
-			            public void run() {
-			            	webBrowserPanel.navigate("https://naver.com");
-			            }
-			        });		        
-		        });
-		        
-		        timer.setRepeats(false);
-		        timer.start();
-				
-				logger.debug("WorkerThread.run() end!!!");
+					if (object == null) {
+						Thread.sleep(1000);
+						continue;
+					}					
+					
+					String objectId = (String)object.get("_id");
+					String host = (String)object.get("host");
+					
+					logger.debug("{} : {}", objectId, host);
+					
+					webBrowserPanel.navigate(objectId, host);
+					
+					/*
+					int delay = 5000;
+			        Timer timer = new Timer( delay, e -> {
+			        	SwingUtilities.invokeLater(new Runnable() {
+				            public void run() {
+				            	webBrowserPanel.navigate("https://naver.com");
+				            }
+				        });		        
+			        });
+			        
+			        timer.setRepeats(false);
+			        timer.start();
+					*/
+
+					Thread.sleep(1000);
+				}
 				
 			} catch (Exception e) {
+				e.printStackTrace();
 			} finally {
+				logger.debug("WorkerThread.run() end!!!");
 			}
 			
 	    }
+	    
+	    public void addQueue(Map<String, String> map) {
+	    	this.queue.add(map);
+	    }
+	    
 
 	} //end WorkerThread
 

@@ -3,25 +3,24 @@ package com.cyberone.cams;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
-import javax.swing.Timer;
+import javax.swing.SwingUtilities;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 
 import chrriis.dj.nativeswing.swtimpl.NativeComponent;
 import chrriis.dj.nativeswing.swtimpl.components.JWebBrowser;
+import chrriis.dj.nativeswing.swtimpl.components.JWebBrowserWindow;
 import chrriis.dj.nativeswing.swtimpl.components.WebBrowserAdapter;
 import chrriis.dj.nativeswing.swtimpl.components.WebBrowserEvent;
+import chrriis.dj.nativeswing.swtimpl.components.WebBrowserWindowOpeningEvent;
+import chrriis.dj.nativeswing.swtimpl.components.WebBrowserWindowWillOpenEvent;
 
-@Service
 public class WebBrowserPanel {
 
 	private static final String LS = System.getProperty("line.separator");
@@ -31,6 +30,8 @@ public class WebBrowserPanel {
 	private JWebBrowser webBrowser = new JWebBrowser();
 	
 	private String objectId;
+	
+	private boolean complete = true;
 	
 	public WebBrowserPanel(Container pane) {
 		
@@ -42,16 +43,35 @@ public class WebBrowserPanel {
         pane.add(contentPane, BorderLayout.CENTER);
         
         webBrowser.addWebBrowserListener(new WebBrowserAdapter() {
+        	
+        	@Override
+        	public void windowWillOpen(WebBrowserWindowWillOpenEvent e) {
+        		logger.debug("windowWillOpen!!!");
+        		JWebBrowser newBrowser = e.getNewWebBrowser();
+        		SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        newBrowser.getWebBrowserWindow().dispose();
+                    }
+                });        		
+        	}
+
+        	@Override
+        	public void windowOpening(WebBrowserWindowOpeningEvent e) {
+        		logger.debug("windowOpening!!!");
+        	}
+        	
         	@Override
         	public void loadingProgressChanged(WebBrowserEvent e) {
-        		logger.debug(""+webBrowser.getLoadingProgress());
+        		//logger.debug(""+webBrowser.getLoadingProgress());
         		if (webBrowser.getLoadingProgress() == 100) {
-        			logger.debug("complete==============");
+        			//logger.debug("complete==============");
+        			complete = true;
         			
+        			/*
         		    Timer timer = new Timer(2000, new ActionListener() {
-
         		    	@Override
         		    	public void actionPerformed( ActionEvent e ) {
+        		    	*/	
         		    		logger.debug("actionPerformed!!!");
         		    		
         		    		String result = (String)webBrowser.executeJavascriptWithResult(
@@ -88,14 +108,20 @@ public class WebBrowserPanel {
 								nativeComponent.setSize(originalSize);
         		            
 								try {
-									File webImage = new File("/CAMS/web_crawler/" + objectId + ".png");
+									//File webImage = new File("/CAMS/web_crawler/" + objectId + ".png");
+									File webImage = new File("C:/Temp/" + objectId + ".png");
 									ImageIO.write(image, "png", webImage);
-								} catch (Exception ex) {}
-        		    		}        		    	  
+								} catch (Exception ex) {
+									ex.printStackTrace();
+								}
+        		    		} 
+        		    		
+        		    	/*	
         		    	}
-        		    });
+        		    });	
         		    timer.setRepeats(false);
         		    timer.start();
+        		     */
         			
         			//logger.debug(webBrowser.getStatusText());
         			//logger.debug(e.getWebBrowser().getHTMLContent());
@@ -136,8 +162,15 @@ public class WebBrowserPanel {
 		
 	}
 	
-	public boolean navigate(String resourceLocation) {
-		return webBrowser.navigate(resourceLocation);
+	public void navigate(String objectId, String resourceLocation) {
+		complete = false;
+		setObjectId(objectId);
+		SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+            	logger.debug("#### " + resourceLocation);
+            	webBrowser.navigate(resourceLocation);
+            }
+        });
 	}
 	
 	public String getResourceLocation() {
@@ -160,6 +193,8 @@ public class WebBrowserPanel {
 		this.objectId = objectId;
 	}
 	
-	
+	public boolean isComplete() {
+		return complete;
+	}
 	
 }

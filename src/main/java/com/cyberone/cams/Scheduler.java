@@ -3,20 +3,19 @@ package com.cyberone.cams;
 import java.util.Calendar;
 import java.util.Timer;
 
+import com.cyberone.cams.CamsWebCrawlerApplication.WorkerThread;
+
 public class Scheduler {
 
 	private Timer timer;
 	private FileDeleteScheduler fileDeleteScheduler; 
+	private WorkerThread worker;
 	
-	private ObjectRepository objectRepository;
-	private WebBrowserPanel webBrowserPanel;
-	
-	public Scheduler(ObjectRepository objectRepository, WebBrowserPanel webBrowserPanel) { 
-		this.objectRepository = objectRepository;
-		this.webBrowserPanel = webBrowserPanel;
+	public Scheduler(WorkerThread worker) {
+		this.worker = worker;
 		
 		timer = new Timer(); 
-		fileDeleteScheduler = new FileDeleteScheduler(objectRepository, webBrowserPanel); 
+		fileDeleteScheduler = new FileDeleteScheduler(worker); 
 	} 
 	
 	public void start() { 

@@ -23,7 +23,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
-import chrriis.dj.nativeswing.common.UIUtils;
+import chrriis.common.UIUtils;
 import chrriis.dj.nativeswing.swtimpl.NativeComponent;
 import chrriis.dj.nativeswing.swtimpl.NativeInterface;
 import chrriis.dj.nativeswing.swtimpl.components.JWebBrowser;
@@ -78,7 +78,7 @@ public class JwebbrowserApplicationTests {
           imageSize.width = Math.max(originalSize.width, imageSize.width + 50);
           imageSize.height = Math.max(originalSize.height, imageSize.height + 50);
           nativeComponent.setSize(imageSize);
-          BufferedImage image = new BufferedImage(imageSize.width, imageSize.height, BufferedImage.TYPE_INT_RGB);
+          BufferedImage image = new BufferedImage(imageSize.width, imageSize.height, BufferedImage.TYPE_INT_ARGB);
           nativeComponent.paintComponent(image);
           nativeComponent.setSize(originalSize);
           
