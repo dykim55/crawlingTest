@@ -7,9 +7,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
@@ -27,19 +24,17 @@ import chrriis.dj.nativeswing.swtimpl.components.WebBrowserEvent;
 @Service
 public class WebBrowserPanel {
 
-	private static final long serialVersionUID = 3293984816682598200L;
-
 	private static final String LS = System.getProperty("line.separator");
 	
 	private final Logger logger = LoggerFactory.getLogger(WebBrowserPanel.class);
 
 	private JWebBrowser webBrowser = new JWebBrowser();
 	
-	private ObjectRepository objectRepository;
-
-	public WebBrowserPanel(ObjectRepository objectRepository, Container pane) {
+	private String objectId;
+	
+	public WebBrowserPanel(Container pane) {
 		
-		this.objectRepository = objectRepository;
+		System.out.println("start WebBrowserPanel()");
 		
     	JPanel contentPane = new JPanel(new BorderLayout());
         contentPane.add(webBrowser, BorderLayout.CENTER);
@@ -58,7 +53,7 @@ public class WebBrowserPanel {
         		    	@Override
         		    	public void actionPerformed( ActionEvent e ) {
         		    		logger.debug("actionPerformed!!!");
-        		    	  
+        		    		
         		    		String result = (String)webBrowser.executeJavascriptWithResult(
         		    				"var width = 0;" + LS +
         		    				"var height = 0;" + LS +
@@ -66,10 +61,10 @@ public class WebBrowserPanel {
         		    				"  width = Math.max(width, document.documentElement.scrollWidth);" + LS +
         		    				"  height = Math.max(height, document.documentElement.scrollHeight);" + LS +
         		    				"}" + LS +
-        		    				"if(self.innerWidth) {" + LS +
-        		    				"  width = Math.max(width, self.innerWidth);" + LS +
-        		    				"  height = Math.max(height, self.innerHeight);" + LS +
-        		    				"}" + LS +
+        		    				//"if(self.innerWidth) {" + LS +
+        		    				//"  width = Math.max(width, self.innerWidth);" + LS +
+        		    				//"  height = Math.max(height, self.innerHeight);" + LS +
+        		    				//"}" + LS +
         		    				"if(document.body.scrollWidth) {" + LS +
         		    				"  width = Math.max(width, document.body.scrollWidth);" + LS +
         		    				"  height = Math.max(height, document.body.scrollHeight);" + LS +
@@ -85,15 +80,15 @@ public class WebBrowserPanel {
 								Dimension originalSize = nativeComponent.getSize();
 								Dimension imageSize = new Dimension(Integer.parseInt(result.substring(0, index)), Integer.parseInt(result.substring(index + 1)));
 								
-								imageSize.width = Math.max(originalSize.width, imageSize.width + 50);
-								imageSize.height = Math.max(originalSize.height, imageSize.height + 50);
+								imageSize.width = Math.max(originalSize.width, imageSize.width);
+								imageSize.height = Math.max(originalSize.height, imageSize.height);
 								nativeComponent.setSize(imageSize);
 								BufferedImage image = new BufferedImage(imageSize.width, imageSize.height, BufferedImage.TYPE_INT_RGB);
 								nativeComponent.paintComponent(image);
 								nativeComponent.setSize(originalSize);
         		            
 								try {
-									File webImage = new File("C:/Temp/snapshot.png");
+									File webImage = new File("/CAMS/web_crawler/" + objectId + ".png");
 									ImageIO.write(image, "png", webImage);
 								} catch (Exception ex) {}
         		    		}        		    	  
@@ -115,15 +110,6 @@ public class WebBrowserPanel {
 		
 	}
 
-	public List<Map<String, Object>> findObjectList() throws Exception {
-		
-		Map<String, Object> paramMap = new HashMap<String, Object>();
-		paramMap.put("account_id", "F9RiomQB0m5O46ybT773");
-		paramMap.put("kinds", "url");
-
-		return objectRepository.findObjectList(paramMap);
-	}
-	
 	public void startWebCrawling() {
 
 		try {
@@ -164,6 +150,14 @@ public class WebBrowserPanel {
 
 	public void setWebBrowser(JWebBrowser webBrowser) {
 		this.webBrowser = webBrowser;
+	}
+
+	public String getObjectId() {
+		return objectId;
+	}
+
+	public void setObjectId(String objectId) {
+		this.objectId = objectId;
 	}
 	
 	
